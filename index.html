@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Django's Task Board 🤠</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { 
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .column {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .backlog-header { border-left: 4px solid #f59e0b; }
+    .progress-header { border-left: 4px solid #3b82f6; }
+    .done-header { border-left: 4px solid #10b981; }
+  </style>
+</head>
+<body class="text-gray-100 p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold flex items-center gap-3">
+          🤠 Django's Task Board
+        </h1>
+        <p class="text-gray-400 mt-1">Douglas & Django - Building Together</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="addTask()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition">
+          + Add Task
+        </button>
+        <button onclick="loadTasks()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition">
+          ↻ Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="card rounded-xl p-4">
+        <div class="text-2xl font-bold" id="stat-total">0</div>
+        <div class="text-gray-400 text-sm">Total Tasks</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-2xl font-bold text-amber-400" id="stat-backlog">0</div>
+        <div class="text-gray-400 text-sm">Backlog</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-2xl font-bold text-blue-400" id="stat-progress">0</div>
+        <div class="text-gray-400 text-sm">In Progress</div>
+      </div>
+      <div class="card rounded-xl p-4">
+        <div class="text-2xl font-bold text-emerald-400" id="stat-done">0</div>
+        <div class="text-gray-400 text-sm">Completed</div>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="grid grid-cols-3 gap-6">
+      <!-- Backlog -->
+      <div class="column rounded-xl p-4">
+        <div class="backlog-header pl-3 mb-4">
+          <h2 class="font-bold text-lg text-amber-400">📋 Backlog</h2>
+        </div>
+        <div id="backlog-tasks" class="space-y-3"></div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="column rounded-xl p-4">
+        <div class="progress-header pl-3 mb-4">
+          <h2 class="font-bold text-lg text-blue-400">🔄 In Progress</h2>
+        </div>
+        <div id="progress-tasks" class="space-y-3"></div>
+      </div>
+
+      <!-- Done -->
+      <div class="column rounded-xl p-4">
+        <div class="done-header pl-3 mb-4">
+          <h2 class="font-bold text-lg text-emerald-400">✅ Done</h2>
+        </div>
+        <div id="done-tasks" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-gray-500 text-sm">
+      Last updated: <span id="last-updated">-</span>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+      <h3 class="text-xl font-bold mb-4">Add New Task</h3>
+      <input type="text" id="new-task-title" placeholder="Task title..." 
+             class="w-full px-4 py-2 bg-gray-700 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <textarea id="new-task-notes" placeholder="Notes (optional)..." 
+                class="w-full px-4 py-2 bg-gray-700 rounded-lg mb-4 h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      <div class="flex gap-3">
+        <button onclick="saveNewTask()" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">
+          Save
+        </button>
+        <button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let tasks = { backlog: [], inProgress: [], done: [] };
+
+    async function loadTasks() {
+      try {
+        const response = await fetch('tasks.json?' + Date.now());
+        tasks = await response.json();
+        renderTasks();
+        updateStats();
+        document.getElementById('last-updated').textContent = new Date().toLocaleString();
+      } catch (e) {
+        console.error('Failed to load tasks:', e);
+      }
+    }
+
+    function renderTasks() {
+      renderColumn('backlog-tasks', tasks.backlog, 'amber');
+      renderColumn('progress-tasks', tasks.inProgress, 'blue');
+      renderColumn('done-tasks', tasks.done, 'emerald');
+    }
+
+    function renderColumn(elementId, items, color) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = items.map(task => `
+        <div class="card rounded-lg p-3 cursor-pointer" onclick="showTaskDetails('${task.id}')">
+          <div class="font-medium">${task.title}</div>
+          ${task.notes ? `<div class="text-gray-400 text-sm mt-1">${task.notes}</div>` : ''}
+          <div class="text-gray-500 text-xs mt-2">${task.created}</div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats() {
+      const total = tasks.backlog.length + tasks.inProgress.length + tasks.done.length;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-backlog').textContent = tasks.backlog.length;
+      document.getElementById('stat-progress').textContent = tasks.inProgress.length;
+      document.getElementById('stat-done').textContent = tasks.done.length;
+    }
+
+    function addTask() {
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('new-task-title').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('new-task-title').value = '';
+      document.getElementById('new-task-notes').value = '';
+    }
+
+    function saveNewTask() {
+      const title = document.getElementById('new-task-title').value.trim();
+      const notes = document.getElementById('new-task-notes').value.trim();
+      
+      if (!title) return;
+
+      const newTask = {
+        id: Date.now().toString(),
+        title: title,
+        created: new Date().toISOString().split('T')[0],
+        ...(notes && { notes })
+      };
+
+      tasks.backlog.unshift(newTask);
+      renderTasks();
+      updateStats();
+      closeModal();
+      
+      // Note: To persist, Django needs to update tasks.json
+      alert('Task added! Note: Ask Django to save the updated tasks.json');
+    }
+
+    function showTaskDetails(id) {
+      // Find task
+      let task = [...tasks.backlog, ...tasks.inProgress, ...tasks.done].find(t => t.id === id);
+      if (task) {
+        alert(`Task: ${task.title}\nCreated: ${task.created}${task.notes ? '\nNotes: ' + task.notes : ''}${task.completed ? '\nCompleted: ' + task.completed : ''}`);
+      }
+    }
+
+    // Load on start
+    loadTasks();
+  </script>
+</body>
+</html>

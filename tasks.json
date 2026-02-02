@@ -1,0 +1,22 @@
+{
+  "backlog": [
+    {"id": "1", "title": "Outlook email integration", "created": "2026-02-02"},
+    {"id": "2", "title": "Build wallet tracker", "created": "2026-02-02"},
+    {"id": "3", "title": "Morning alpha scanner", "created": "2026-02-02"}
+  ],
+  "inProgress": [
+    {"id": "4", "title": "Follow @0xkitty69's X follows", "created": "2026-02-02", "notes": "~30 done, ~20 remaining (rate limited)"}
+  ],
+  "done": [
+    {"id": "5", "title": "Set up Telegram", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "6", "title": "Create X account @Django323867", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "7", "title": "X Premium subscription", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "8", "title": "OpenAI API + Codex CLI", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "9", "title": "Gemini API", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "10", "title": "Grok API", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "11", "title": "Brave Search API", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "12", "title": "Dexscreener API", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "13", "title": "Morning/evening briefing cron jobs", "created": "2026-02-02", "completed": "2026-02-02"},
+    {"id": "14", "title": "Build Kanban dashboard", "created": "2026-02-02", "completed": "2026-02-02"}
+  ]
+}
